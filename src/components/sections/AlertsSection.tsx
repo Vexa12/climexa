@@ -83,16 +83,6 @@ export default function AlertsSection() {
           CLIMEXA utiliza datos de Worldview y Giovanni para generar alertas meteorológicas automáticas
           basadas en tu ubicación y eventos planificados.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">Worldview NASA</h3>
-            <p className="text-sm text-orange-100">Imagen satelital actual para condiciones del terreno</p>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">Giovanni + OPeNDAP</h3>
-            <p className="text-sm text-orange-100">Análisis en tiempo real de alertas meteorológicas</p>
-          </div>
-        </div>
       </div>
 
       <div className="space-y-6">

@@ -1,4 +1,5 @@
 import { User, Event, Review, AstronomicalEvent } from '../types';
+import { getWeatherPrediction } from './ai';
 
 const STORAGE_KEYS = {
   CURRENT_USER: 'climexa_current_user',
@@ -125,3 +126,7 @@ export const storage = {
     ];
   }
 };
+
+export async function fetchVertexAIRecommendations(activity: string): Promise<any[]> {
+  return await getWeatherPrediction(activity);
+}

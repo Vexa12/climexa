@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, MapPin, Calendar, TrendingUp, Sparkles } from 'lucide-react';
+import { getWeatherPrediction } from '../../utils/ai';
 
 export default function RecommenderSection() {
   const [activityType, setActivityType] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const activities = [
     'Camping',
@@ -12,40 +16,60 @@ export default function RecommenderSection() {
     'Observación Astronómica',
     'Deportes al Aire Libre',
     'Picnic',
+    'Pesca',
+    'Escalada',
+    'Ciclismo',
+    'Kayak',
+    'Surf',
+    'Esquí',
+    'Snowboard',
+    'Parapente',
+    'Buceo',
+    'Excursionismo',
+    'Observación de Aves',
+    'Fotografía de Naturaleza',
+    'Acampada Salvaje',
+    'Trekking',
+    'Montañismo',
+    'Rafting',
+    'Canoa',
+    'Paddleboarding',
+    'Kitesurf',
+    'Windsurf',
+    'Buceo con Snorkel',
+    'Pesca Deportiva',
+    'Caza Fotográfica',
+    'Observación de Estrellas',
   ];
 
-  const handleSearch = () => {
-    const mockRecommendations = [
-      {
-        location: 'Parque Tunari',
-        dates: '10-13 de Octubre',
-        score: 95,
-        temperature: '14-18°C',
-        conditions: 'Despejado',
-        rainfall: '5%',
-        reason: '85% de días despejados y vientos suaves en este período',
-      },
-      {
-        location: 'Toro Toro',
-        dates: '18-21 de Octubre',
-        score: 92,
-        temperature: '12-16°C',
-        conditions: 'Parcialmente Nublado',
-        rainfall: '10%',
-        reason: 'Temperatura ideal y baja humedad. Excelente para senderismo.',
-      },
-      {
-        location: 'Valle Alto',
-        dates: '25-28 de Octubre',
-        score: 88,
-        temperature: '16-20°C',
-        conditions: 'Despejado',
-        rainfall: '3%',
-        reason: 'Condiciones óptimas con visibilidad excepcional',
-      },
-    ];
+  const filteredActivities = activities.filter(activity =>
+    activity.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    setRecommendations(mockRecommendations);
+  useEffect(() => {
+    if (activityType) {
+      fetchRecommendations(activityType);
+    }
+  }, [activityType]);
+
+  const fetchRecommendations = async (activity: string) => {
+    console.log('fetchRecommendations called with activity:', activity);
+    setLoading(true);
+    try {
+      const vertexRecommendations = await getWeatherPrediction(activity);
+      console.log('Received recommendations:', vertexRecommendations);
+      if (vertexRecommendations.length > 0) {
+        console.log('Setting recommendations:', vertexRecommendations);
+        setRecommendations(vertexRecommendations);
+      } else {
+        console.log('No recommendations received, setting empty array');
+        setRecommendations([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch recommendations:', error);
+      setRecommendations([]);
+    }
+    setLoading(false);
   };
 
   return (
@@ -55,56 +79,73 @@ export default function RecommenderSection() {
         <p className="text-gray-600">Descubre cuándo y dónde realizar tu actividad según datos históricos</p>
       </div>
 
-      <div className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl shadow-xl p-8 text-white">
-        <h2 className="text-2xl font-bold mb-4">Fuentes de Datos NASA</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">Giovanni</h3>
-            <p className="text-sm text-cyan-100">Analiza series históricas de temperatura y lluvia</p>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">GES DISC OPeNDAP</h3>
-            <p className="text-sm text-cyan-100">Calcula patrones climáticos favorables</p>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">Data Rods</h3>
-            <p className="text-sm text-cyan-100">Evalúa humedad del suelo y viabilidad del terreno</p>
-          </div>
-        </div>
-      </div>
-
       <div className="bg-white rounded-2xl shadow-lg p-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Buscar Recomendaciones</h2>
         <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tipo de Actividad
             </label>
-            <select
-              value={activityType}
-              onChange={(e) => setActivityType(e.target.value)}
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+              placeholder="Buscar actividad..."
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            >
-              <option value="">Selecciona una actividad</option>
-              {activities.map((activity) => (
-                <option key={activity} value={activity}>{activity}</option>
-              ))}
-            </select>
+            />
+            {showSuggestions && filteredActivities.length > 0 && (
+              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto">
+                {filteredActivities.map((activity) => (
+                  <div
+                    key={activity}
+                    onClick={() => {
+                      setSearchTerm(activity);
+                      setActivityType(activity);
+                      setShowSuggestions(false);
+                    }}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    {activity}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-3">
             <button
-              onClick={handleSearch}
-              disabled={!activityType}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+              onClick={() => {
+                if (searchTerm.trim()) {
+                  setActivityType(searchTerm.trim());
+                }
+              }}
+              disabled={loading || !searchTerm.trim()}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Search className="w-5 h-5" />
               Buscar
             </button>
+            {loading ? (
+              <p className="text-sm text-blue-600">Generando recomendaciones...</p>
+            ) : activityType ? (
+              <p className="text-sm text-gray-600">Recomendaciones generadas para {activityType}</p>
+            ) : (
+              <p className="text-sm text-gray-600">Selecciona una actividad para obtener recomendaciones automáticas</p>
+            )}
           </div>
         </div>
       </div>
 
-      {recommendations.length > 0 && (
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Generando recomendaciones inteligentes...</p>
+        </div>
+      ) : recommendations.length > 0 ? (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-yellow-500" />
@@ -155,24 +196,13 @@ export default function RecommenderSection() {
             </div>
           ))}
         </div>
-      )}
-
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Cómo Funciona</h3>
-        <div className="space-y-3 text-gray-600">
-          <p>
-            El recomendador analiza datos históricos de clima de los últimos 10 años para identificar
-            los períodos con mejores condiciones para tu actividad.
-          </p>
-          <p>
-            Utiliza algoritmos de IA que consideran temperatura, precipitación, vientos, humedad y
-            otros factores para generar un score de idoneidad.
-          </p>
-          <p className="text-sm text-gray-500 italic">
-            Datos proporcionados por NASA Giovanni, GES DISC OPeNDAP y Data Rods for Hydrology
-          </p>
+      ) : activityType ? (
+        <div className="text-center py-8">
+          <p className="text-gray-600">No se pudieron generar recomendaciones. Verifica tu configuración de API.</p>
+          <p className="text-red-600 text-sm mt-2">Por favor revisa que las variables de entorno para la API de Google Cloud estén correctamente configuradas.</p>
         </div>
-      </div>
+      ) : null}
+      
     </div>
   );
 }

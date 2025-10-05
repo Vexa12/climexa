@@ -33,27 +33,6 @@ export default function StatisticsSection() {
         <p className="text-gray-600">Análisis histórico y tendencias basadas en datos NASA</p>
       </div>
 
-      <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white">
-        <h2 className="text-2xl font-bold mb-4">Fuentes de Datos Históricos</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">Giovanni</h3>
-            <p className="text-sm text-violet-100">Series temporales por variable</p>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">GES DISC</h3>
-            <p className="text-sm text-violet-100">Datasets y estadísticas</p>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">Data Rods</h3>
-            <p className="text-sm text-violet-100">Variables hidrológicas</p>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">Worldview</h3>
-            <p className="text-sm text-violet-100">Imágenes históricas</p>
-          </div>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-br from-orange-400 to-red-500 rounded-xl shadow-lg p-6 text-white">

@@ -1,7 +1,14 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Star, MapPin, Camera, Send } from 'lucide-react';
+import { Wrapper, Status } from '@googlemaps/react-wrapper';
 import { User, Review } from '../../types';
 import { storage } from '../../utils/storage';
+
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 interface CommunitySectionProps {
   user: User;
@@ -14,6 +21,8 @@ export default function CommunitySection({ user }: CommunitySectionProps) {
     rating: 5,
     comment: '',
   });
+  const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
+  const [addressLoading, setAddressLoading] = useState(false);
 
   const locations = [
     'Parque Tunari',
@@ -61,6 +70,74 @@ export default function CommunitySection({ user }: CommunitySectionProps) {
     };
   });
 
+  const render = (status: Status) => {
+    if (status === Status.LOADING) return <p>Cargando mapa...</p>;
+    if (status === Status.FAILURE) return <p>Error al cargar el mapa</p>;
+    return <></>;
+  };
+
+  const Map = ({
+    center,
+    zoom,
+    selectedLocation,
+    setSelectedLocation,
+    setLocationId,
+    setAddressLoading,
+  }: {
+    center: google.maps.LatLngLiteral;
+    zoom: number;
+    selectedLocation: [number, number] | null;
+    setSelectedLocation: (loc: [number, number]) => void;
+    setLocationId: (id: string) => void;
+    setAddressLoading: (loading: boolean) => void;
+  }) => {
+    const ref = useRef<HTMLDivElement>(null);
+    const [map, setMap] = useState<google.maps.Map>();
+    const [marker, setMarker] = useState<google.maps.Marker>();
+
+    useEffect(() => {
+      if (ref.current && !map) {
+        setMap(new window.google.maps.Map(ref.current, { center, zoom }));
+      }
+    }, [ref, map]);
+
+    useEffect(() => {
+      if (map) {
+        map.setCenter(center);
+        map.setZoom(zoom);
+
+        map.addListener('click', async (e: google.maps.MapMouseEvent) => {
+          if (e.latLng) {
+            const lat = e.latLng.lat();
+            const lng = e.latLng.lng();
+            setSelectedLocation([lat, lng]);
+            setAddressLoading(true);
+            if (marker) marker.setMap(null);
+            const newMarker = new window.google.maps.Marker({
+              position: e.latLng,
+              map: map,
+            });
+            setMarker(newMarker);
+            try {
+              const geocoder = new window.google.maps.Geocoder();
+              const results = await geocoder.geocode({ location: e.latLng });
+              if (results[0]) {
+                setLocationId(results[0].formatted_address);
+              } else {
+                setLocationId(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+              }
+            } catch {
+              setLocationId(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+            }
+            setAddressLoading(false);
+          }
+        });
+      }
+    }, [map, center, zoom, setSelectedLocation, setLocationId, setAddressLoading, marker]);
+
+    return <div ref={ref} style={{ width: '100%', height: '100%' }} />;
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -83,16 +160,7 @@ export default function CommunitySection({ user }: CommunitySectionProps) {
           CLIMEXA analiza los comentarios de la comunidad usando procesamiento de lenguaje natural
           para extraer insights útiles sobre condiciones reales en cada ubicación.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">Hugging Face NLP</h3>
-            <p className="text-sm text-green-100">Analiza sentimientos y temas comunes en comentarios</p>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4 backdrop-blur">
-            <h3 className="font-semibold mb-2">Firebase / Cloud DB</h3>
-            <p className="text-sm text-green-100">Almacena comentarios y fotos de la comunidad</p>
-          </div>
-        </div>
+        
       </div>
 
       {showForm ? (
@@ -101,22 +169,25 @@ export default function CommunitySection({ user }: CommunitySectionProps) {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ubicación
+                Ubicación (haz clic en el mapa para seleccionar)
               </label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <select
-                  value={formData.locationId}
-                  onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                  required
-                >
-                  <option value="">Selecciona un lugar</option>
-                  {locations.map((loc) => (
-                    <option key={loc} value={loc}>{loc}</option>
-                  ))}
-                </select>
+              <div className="h-64 w-full border border-gray-300 rounded-lg overflow-hidden mb-2">
+                <Wrapper apiKey="AIzaSyBQpToik2WTQFrvheexS-K-V4TVYrwkRbQ" render={render}>
+                  <Map
+                    center={{ lat: -17.3935, lng: -66.1570 }}
+                    zoom={10}
+                    selectedLocation={selectedLocation}
+                    setSelectedLocation={setSelectedLocation}
+                    setLocationId={(id) => setFormData({ ...formData, locationId: id })}
+                    setAddressLoading={setAddressLoading}
+                  />
+                </Wrapper>
               </div>
+              {addressLoading ? (
+                <p className="text-sm text-gray-600">Obteniendo dirección...</p>
+              ) : formData.locationId ? (
+                <p className="text-sm text-gray-600">Ubicación seleccionada: {formData.locationId}</p>
+              ) : null}
             </div>
 
             <div>
